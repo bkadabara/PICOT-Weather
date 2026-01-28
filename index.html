@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PICOT Weather Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f0f8ff;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #3498db;
+      color: white;
+      padding: 20px;
+    }
+    #logo {
+      width: 100px;
+      display: block;
+      margin: 0 auto 10px;
+    }
+    h1 {
+      margin: 0;
+    }
+    main {
+      margin: 30px;
+    }
+    input {
+      padding: 10px;
+      margin: 5px;
+      width: 150px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    footer {
+      margin-top: 40px;
+      padding: 10px;
+      background: #eee;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img id="logo" src="picot-logo.png" alt="PICOT Logo">
+    <h1>PICOT Weather Tracker</h1>
+    <p>Forecast powered by OpenWeatherMap</p>
+  </header>
+
+  <main>
+    <p>Enter GPS Coordinates:</p>
+    <input type="text" id="lat" placeholder="Latitude">
+    <input type="text" id="lon" placeholder="Longitude">
+    <br>
+    <button onclick="getWeather()">Get Forecast</button>
+    <div id="result"></div>
+  </main>
+
+  <footer>
+    &copy; 2026 PICOT | Weather Tracker App
+  </footer>
+
+  <script>
+    async function getWeather() {
+      const lat = document.getElementById('lat').value;
+      const lon = document.getElementById('lon').value;
+      const apiKey = "f430701439c4ab9d557d047cea0d6df6"; // Your OpenWeatherMap API key
+      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.cod !== "200") {
+          document.getElementById('result').innerHTML = "<p>Error fetching data. Check coordinates or API key.</p>";
+          return;
+        }
+
+        let output = "<h3>Upcoming Forecast:</h3>";
+        data.list.slice(0, 5).forEach(item => {
+          output += `<p><strong>${item.dt_txt}</strong>: ${item.weather[0].description}, Temp: ${item.main.temp}°C</p>`;
+        });
+
+        document.getElementById('result').innerHTML = output;
+      } catch (error) {
+        document.getElementById('result').innerHTML = "<p>Unable to fetch weather data.</p>";
+      }
+    }
+  </script>
+</body>
+</html>
