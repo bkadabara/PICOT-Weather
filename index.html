@@ -73,7 +73,7 @@
       const lon = document.getElementById('lon').value.trim();
       if(!lat||!lon){ alert("Please enter both latitude and longitude."); return; }
 
-      const apiKey = "YOUR_API_KEY"; // replace with valid OpenWeatherMap key
+      const apiKey = "f430701439c4ab9d557d047cea0d6df6"; // replace with valid OpenWeatherMap key
       const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
 
       document.getElementById('map').innerHTML = `<iframe width="100%" height="300" src="https://www.google.com/maps?q=${lat},${lon}&output=embed"></iframe>`;
@@ -145,3 +145,4 @@
       html2pdf().set(opt).from(element).save();
     }
   </
+
