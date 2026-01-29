@@ -42,17 +42,14 @@
       margin: 0 auto;
     }
     .controls { margin-bottom: 12px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:8px; }
-    .instruction {
+    .label-top {
       width:100%;
       max-width:1100px;
-      margin: 8px auto 6px;
-      font-size:14px;
+      margin: 6px auto 0;
+      font-size:15px;
       color:#333;
       text-align:left;
-      padding:8px 12px;
-      background:#fff;
-      border-radius:8px;
-      box-shadow: 1px 2px 6px rgba(0,0,0,0.04);
+      padding:0 6px;
     }
     .controls-left { display:flex; gap:8px; align-items:center; }
     input[type="text"] {
@@ -143,7 +140,7 @@
       input[type="text"]{ width: 140px; }
       .card { width: 140px; min-height:150px; }
       th, td { font-size:13px; padding:8px; }
-      .instruction { font-size:13px; padding:8px; }
+      .label-top { font-size:13px; }
     }
   </style>
 
@@ -157,10 +154,7 @@
   </header>
 
   <main id="report">
-    <div class="instruction">
-      <strong>Enter coordinates:</strong> Type the <em>latitude</em> and <em>longitude</em> (decimal degrees) into the boxes below, then click <strong>Get Forecast</strong>.  
-      Example: <code>Latitude: 3.41666670</code>, <code>Longitude: 30.91105</code>.
-    </div>
+    <div class="label-top">Enter coordinates</div>
 
     <div class="controls" aria-hidden="false">
       <div class="controls-left">
