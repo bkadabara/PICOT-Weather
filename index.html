@@ -4,96 +4,22 @@
   <meta charset="UTF-8">
   <title>PICOT Weather Tracker</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #F5F5F5;
-      margin: 0;
-      padding: 0;
-      color: #000000;
-    }
-    header {
-      background-color: #2E3192;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    #logo {
-      width: 120px;
-      margin-bottom: 10px;
-    }
-    h1 {
-      margin: 0;
-      font-size: 28px;
-    }
-    main {
-      padding: 20px;
-      text-align: center;
-    }
-    input {
-      padding: 10px;
-      margin: 5px;
-      width: 160px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    button {
-      padding: 10px 20px;
-      background-color: #00A651;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #ED1C24;
-    }
-    iframe {
-      margin-top: 20px;
-      border: none;
-      border-radius: 8px;
-    }
-    table {
-      margin: 20px auto;
-      border-collapse: collapse;
-      width: 95%;
-      max-width: 1000px;
-      background-color: white;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background-color: #2E3192;
-      color: white;
-    }
-    .forecast-card {
-      display: inline-block;
-      background-color: white;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 10px;
-      margin: 10px;
-      width: 120px;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-    }
-    .forecast-card h4 {
-      margin: 5px 0;
-      color: #2E3192;
-    }
-    .forecast-card p {
-      margin: 3px 0;
-      font-size: 14px;
-    }
-    footer {
-      background-color: #2E3192;
-      color: white;
-      text-align: center;
-      padding: 10px;
-      margin-top: 40px;
-    }
+    body { font-family: Arial, sans-serif; background:#F5F5F5; margin:0; padding:0; color:#000; }
+    header { background:#2E3192; color:#fff; padding:20px; text-align:center; }
+    #logo { width:120px; margin-bottom:10px; }
+    h1 { margin:0; font-size:28px; }
+    main { padding:20px; text-align:center; }
+    input { padding:10px; margin:5px; width:160px; border:1px solid #ccc; border-radius:4px; }
+    button { padding:10px 20px; background:#00A651; color:#fff; border:none; border-radius:4px; cursor:pointer; margin:10px; }
+    button:hover { background:#ED1C24; }
+    iframe { margin-top:20px; border:none; border-radius:8px; }
+    table { margin:20px auto; border-collapse:collapse; width:95%; max-width:1000px; background:#fff; box-shadow:2px 2px 8px rgba(0,0,0,0.1); }
+    th, td { border:1px solid #ccc; padding:10px; text-align:center; }
+    th { background:#2E3192; color:#fff; }
+    tr:nth-child(even) { background:#f9f9f9; }
+    footer { background:#2E3192; color:#fff; text-align:center; padding:10px; margin-top:40px; }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <header>
@@ -102,94 +28,120 @@
     <p>Partners in Development and Center for Holistic Transformation</p>
   </header>
 
-  <main>
+  <main id="report">
     <p>Enter GPS Coordinates:</p>
     <input type="text" id="lat" placeholder="Latitude">
-    <input type="text" id="lon" placeholder="Longitude">
-    <br>
+    <input type="text" id="lon" placeholder="Longitude"><br>
     <button onclick="getWeather()">Get Forecast</button>
     <div id="map"></div>
 
     <h2>3-Hourly Forecast (Next 5 Entries)</h2>
-    <table>
+    <table id="hourly-table">
       <thead>
         <tr>
-          <th>Time</th>
-          <th>Cloud Condition</th>
-          <th>Temperature (°C)</th>
-          <th>Precipitation (mm)</th>
-          <th>Humidity (%)</th>
-          <th>Wind</th>
-          <th>Chance of Rain (%)</th>
+          <th>Time</th><th>Cloud Condition</th><th>Temperature (°C)</th>
+          <th>Humidity (%)</th><th>Wind</th><th>Chance of Rain (%)</th><th>Precipitation (mm)</th>
         </tr>
       </thead>
       <tbody id="forecast-table"></tbody>
     </table>
 
-    <h2>7-Day Forecast Summary</h2>
-    <div id="daily-summary"></div>
+    <h2>5-Day Forecast (Daily Summary)</h2>
+    <table id="daily-summary-table">
+      <thead>
+        <tr>
+          <th>Date</th><th>Day</th><th>Avg Temp (°C)</th><th>Humidity (%)</th><th>Chance of Rain (%)</th>
+        </tr>
+      </thead>
+      <tbody id="daily-table"></tbody>
+    </table>
+
+    <button onclick="downloadCSV()">Download as CSV</button>
+    <button onclick="downloadPDF()">Download as PDF</button>
   </main>
 
-  <footer>
-    &copy; 2026 PICOT | Weather Tracker App
-  </footer>
+  <footer>&copy; 2026 PICOT | Weather Tracker App</footer>
 
   <script>
     function getWindDirection(deg) {
-      const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-      return directions[Math.round(deg / 45) % 8];
+      const dirs = ["N","NE","E","SE","S","SW","W","NW"];
+      return dirs[Math.round(deg/45)%8];
     }
 
     async function getWeather() {
-      const lat = document.getElementById('lat').value;
-      const lon = document.getElementById('lon').value;
-      const apiKey = "f430701439c4ab9d557d047cea0d6df6";
+      const lat = document.getElementById('lat').value.trim();
+      const lon = document.getElementById('lon').value.trim();
+      if(!lat||!lon){ alert("Please enter both latitude and longitude."); return; }
+
+      const apiKey = "YOUR_API_KEY"; // replace with valid OpenWeatherMap key
       const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
 
       document.getElementById('map').innerHTML = `<iframe width="100%" height="300" src="https://www.google.com/maps?q=${lat},${lon}&output=embed"></iframe>`;
 
       try {
         const response = await fetch(url);
+        if(!response.ok) throw new Error("API error "+response.status);
         const data = await response.json();
-        const table = document.getElementById('forecast-table');
-        table.innerHTML = "";
 
-        data.list.slice(0, 5).forEach(item => {
-          const rainChance = Math.round((item.pop || 0) * 100) + "%";
+        // 3-hourly forecast
+        const table = document.getElementById('forecast-table'); table.innerHTML="";
+        data.list.slice(0,5).forEach(item=>{
+          const rainChance = Math.round((item.pop||0)*100)+"%";
           const precipitation = item.rain && item.rain["3h"] ? item.rain["3h"] : 0;
           const wind = `${item.wind.speed} m/s ${getWindDirection(item.wind.deg)}`;
-          const row = `<tr>
-            <td>${item.dt_txt}</td>
-            <td>${item.weather[0].description}</td>
-            <td>${item.main.temp}</td>
-            <td>${precipitation}</td>
-            <td>${item.main.humidity}</td>
-            <td>${wind}</td>
-            <td>${rainChance}</td>
+          table.innerHTML += `<tr>
+            <td>${item.dt_txt}</td><td>${item.weather[0].description}</td>
+            <td>${item.main.temp}</td><td>${item.main.humidity}</td>
+            <td>${wind}</td><td>${rainChance}</td><td>${precipitation}</td>
           </tr>`;
-          table.innerHTML += row;
         });
 
-        // Simulated 7-day summary
-        const summary = document.getElementById('daily-summary');
-        summary.innerHTML = "";
-        const days = ["Yesterday", "Today", "Friday", "Saturday", "Sunday", "Monday", "Tuesday"];
-        for (let i = 0; i < 7; i++) {
-          const temp = Math.round(25 + Math.random() * 10);
-          const rain = Math.round(Math.random() * 100);
-          const card = `<div class="forecast-card">
-            <h4>${days[i]}</h4>
-            <p>${new Date(Date.now() + (i - 1) * 86400000).toLocaleDateString()}</p>
-            <p>Temp: ${temp}°C</p>
-            <p>Rain: ${rain}%</p>
-          </div>`;
-          summary.innerHTML += card;
-        }
+        // 5-day summary
+        const dailyTable = document.getElementById('daily-table'); dailyTable.innerHTML="";
+        const days={};
+        data.list.forEach(item=>{
+          const date=item.dt_txt.split(" ")[0];
+          if(!days[date]) days[date]={temps:[],humidity:[],pop:[]};
+          days[date].temps.push(item.main.temp);
+          days[date].humidity.push(item.main.humidity);
+          days[date].pop.push(item.pop||0);
+        });
+        Object.keys(days).slice(0,5).forEach(date=>{
+          const avgTemp=Math.round(days[date].temps.reduce((a,b)=>a+b,0)/days[date].temps.length);
+          const avgHumidity=Math.round(days[date].humidity.reduce((a,b)=>a+b,0)/days[date].humidity.length);
+          const avgPop=Math.round((days[date].pop.reduce((a,b)=>a+b,0)/days[date].pop.length)*100);
+          const dayName=new Date(date).toLocaleDateString('en-US',{weekday:'long'});
+          dailyTable.innerHTML += `<tr>
+            <td>${date}</td><td>${dayName}</td><td>${avgTemp}</td><td>${avgHumidity}</td><td>${avgPop}%</td>
+          </tr>`;
+        });
 
-      } catch {
-        document.getElementById('forecast-table').innerHTML = "<tr><td colspan='7'>Error fetching forecast</td></tr>";
+      } catch(err) {
+        console.error(err);
+        document.getElementById('forecast-table').innerHTML="<tr><td colspan='7'>Error fetching forecast</td></tr>";
+        document.getElementById('daily-table').innerHTML="<tr><td colspan='5'>Error fetching forecast</td></tr>";
       }
     }
-  </script>
-</body>
-</html>
+
+    function downloadCSV(){
+      let csv=[];
+      [document.getElementById("hourly-table"),document.getElementById("daily-summary-table")].forEach(table=>{
+        table.querySelectorAll("tr").forEach(row=>{
+          const cols=row.querySelectorAll("th,td");
+          csv.push(Array.from(cols).map(c=>c.innerText).join(","));
+        });
+        csv.push("");
+      });
+      const blob=new Blob([csv.join("\n")],{type:"text/csv"});
+      const link=document.createElement("a");
+      link.href=URL.createObjectURL(blob);
+      link.download="PICOT_Forecast.csv";
+      link.click();
+    }
+
+    function downloadPDF(){
+      const element=document.getElementById("report");
+      const opt={margin:0.5,filename:'PICOT_Forecast.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'in',format:'a4',orientation:'portrait'}};
+      html2pdf().set(opt).from(element).save();
+    }
+  </
