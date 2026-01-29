@@ -28,17 +28,37 @@
     }
     #logo { width: 120px; display:block; margin: 0 auto 8px; }
     h1 { margin: 0; font-size: 26px; }
+    .org-name {
+      margin-top: 6px;
+      font-weight: 800;
+      color: #fff;
+      font-size: 15px;
+      letter-spacing: 0.2px;
+    }
     main {
       padding: 20px;
       text-align: center;
       max-width: 1100px;
       margin: 0 auto;
     }
-    .controls { margin-bottom: 12px; }
+    .controls { margin-bottom: 12px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:8px; }
+    .instruction {
+      width:100%;
+      max-width:1100px;
+      margin: 8px auto 6px;
+      font-size:14px;
+      color:#333;
+      text-align:left;
+      padding:8px 12px;
+      background:#fff;
+      border-radius:8px;
+      box-shadow: 1px 2px 6px rgba(0,0,0,0.04);
+    }
+    .controls-left { display:flex; gap:8px; align-items:center; }
     input[type="text"] {
       padding: 10px;
-      margin: 6px 6px 6px 0;
-      width: 160px;
+      margin: 0;
+      width: 180px;
       border: 1px solid #ccc;
       border-radius: 6px;
       box-sizing: border-box;
@@ -55,6 +75,8 @@
     }
     button:hover { background: var(--accent-hover); transform: translateY(-1px); }
     #map { margin-top: 14px; border-radius: 8px; overflow: hidden; }
+    #static-map { display:none; width:100%; height:auto; border-radius:8px; }
+
     table {
       margin: 20px auto;
       border-collapse: collapse;
@@ -77,7 +99,6 @@
       font-weight: 600;
     }
     tr:nth-child(even) td { background: #fbfbfb; }
-    /* Cards */
     #daily-cards {
       display:flex;
       flex-wrap:wrap;
@@ -111,44 +132,53 @@
       transform: translateY(-6px) scale(1.03);
     }
     .card:hover h4 { color: #fff; }
-    .small-note { font-size:13px; color:#666; margin-top:6px; }
     footer {
       background: var(--picot-blue);
       color: #fff;
-      text-align:center;
+      text-align: center;
       padding: 12px;
       margin-top: 28px;
     }
-    /* Responsive */
     @media (max-width:640px){
       input[type="text"]{ width: 140px; }
       .card { width: 140px; min-height:150px; }
       th, td { font-size:13px; padding:8px; }
+      .instruction { font-size:13px; padding:8px; }
     }
   </style>
 
-  <!-- html2pdf for PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <header>
     <img id="logo" src="picot-logo.png" alt="PICOT Logo" />
     <h1>PICOT Weather Tracker</h1>
-    <div class="small-note">Partners in Development and Center for Holistic Transformation</div>
+    <div class="org-name">Partners in Development and Center for Holistic Transformation (PICOT)</div>
   </header>
 
   <main id="report">
+    <div class="instruction">
+      <strong>Enter coordinates:</strong> Type the <em>latitude</em> and <em>longitude</em> (decimal degrees) into the boxes below, then click <strong>Get Forecast</strong>.  
+      Example: <code>Latitude: 3.41666670</code>, <code>Longitude: 30.91105</code>.
+    </div>
+
     <div class="controls" aria-hidden="false">
-      <label for="lat" style="display:none">Latitude</label>
-      <input type="text" id="lat" placeholder="Latitude (e.g., 3.41666670)" />
-      <label for="lon" style="display:none">Longitude</label>
-      <input type="text" id="lon" placeholder="Longitude (e.g., 30.91105)" />
-      <button id="getBtn" onclick="getWeather()">Get Forecast</button>
-      <button onclick="downloadCSV()">Download as CSV</button>
-      <button onclick="downloadPDF()">Download as PDF</button>
+      <div class="controls-left">
+        <label for="lat" style="display:none">Latitude</label>
+        <input type="text" id="lat" placeholder="Latitude (e.g., 3.41666670)" />
+        <label for="lon" style="display:none">Longitude</label>
+        <input type="text" id="lon" placeholder="Longitude (e.g., 30.91105)" />
+      </div>
+
+      <div class="controls-right">
+        <button id="getBtn" onclick="getWeather()">Get Forecast</button>
+        <button onclick="downloadCSV()">Download as CSV</button>
+        <button onclick="downloadPDF()">Download as PDF</button>
+      </div>
     </div>
 
     <div id="map" aria-hidden="false"></div>
+    <img id="static-map" alt="Static map snapshot for PDF" />
 
     <h2 style="margin-top:18px">3-Hourly Forecast (Next 5 Entries)</h2>
     <table id="hourly-table" role="table" aria-label="3-hourly forecast">
@@ -168,20 +198,22 @@
 
     <h2 style="margin-top:18px">5-Day Forecast (Daily Summary)</h2>
     <div id="daily-cards" aria-live="polite"></div>
-
-    <div class="small-note">Tip: hover a card to highlight it for presentations.</div>
   </main>
 
   <footer>&copy; 2026 PICOT | Weather Tracker App</footer>
 
   <script>
-    // Global store for daily summary so CSV can include it
     let lastDailySummary = [];
 
     function getWindDirection(deg) {
       if (deg === undefined || deg === null || isNaN(deg)) return "";
       const dirs = ["N","NE","E","SE","S","SW","W","NW"];
       return dirs[Math.round(deg/45) % 8];
+    }
+
+    function buildStaticMapURL(lat, lon, width = 1000, height = 500, zoom = 11) {
+      const size = `${Math.min(width, 1200)}x${Math.min(height, 800)}`;
+      return `https://staticmap.openstreetmap.de/staticmap.php?center=${encodeURIComponent(lat)},${encodeURIComponent(lon)}&zoom=${zoom}&size=${size}&markers=${encodeURIComponent(lat)},${encodeURIComponent(lon)},red-pushpin`;
     }
 
     async function getWeather() {
@@ -192,13 +224,16 @@
         return;
       }
 
-      const apiKey = "f430701439c4ab9d557d047cea0d6df6"; // confirmed API key
+      const apiKey = "f430701439c4ab9d557d047cea0d6df6";
       const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&appid=${apiKey}&units=metric`;
 
-      // show map (embedded)
       document.getElementById('map').innerHTML = `<iframe width="100%" height="300" src="https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lon)}&output=embed" style="border:0"></iframe>`;
 
-      // clear previous
+      const staticUrl = buildStaticMapURL(lat, lon, 1000, 500, 11);
+      const staticImg = document.getElementById('static-map');
+      staticImg.src = staticUrl;
+      staticImg.alt = `Map centered at ${lat}, ${lon}`;
+
       document.getElementById('forecast-table').innerHTML = "";
       document.getElementById('daily-cards').innerHTML = "";
       lastDailySummary = [];
@@ -208,7 +243,6 @@
         if (!resp.ok) throw new Error('API error ' + resp.status);
         const data = await resp.json();
 
-        // --- 3-hourly (next 5 entries) ---
         const hourlyTbody = document.getElementById('forecast-table');
         const hourlyEntries = (data.list || []).slice(0, 5);
         if (hourlyEntries.length === 0) {
@@ -233,7 +267,6 @@
           });
         }
 
-        // --- 5-day summary as cards ---
         const days = {};
         (data.list || []).forEach(item => {
           const date = item.dt_txt.split(' ')[0];
@@ -256,7 +289,6 @@
             const avgHumidity = d.humidity.length ? Math.round(d.humidity.reduce((a,b)=>a+b,0)/d.humidity.length) : '';
             const avgPop = d.pop.length ? Math.round((d.pop.reduce((a,b)=>a+b,0)/d.pop.length)*100) : 0;
             const dayName = new Date(date).toLocaleDateString('en-US',{weekday:'long'});
-            // choose icon by most common weather in that day
             const freq = {};
             d.weather.forEach(w => { freq[w] = (freq[w]||0)+1; });
             const most = Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0] || '';
@@ -266,7 +298,6 @@
             if (most.includes("Storm") || most.includes("Thunder")) icon = "⛈️";
             if (most.includes("Snow")) icon = "❄️";
 
-            // store for CSV export
             lastDailySummary.push({ date, dayName, avgTemp, avgHumidity, avgPop });
 
             const card = document.createElement('div');
@@ -287,24 +318,18 @@
         console.error(err);
         document.getElementById('forecast-table').innerHTML = "<tr><td colspan='7'>Error fetching forecast</td></tr>";
         document.getElementById('daily-cards').innerHTML = "<p>Error fetching forecast</p>";
-        // keep map visible so user can verify coordinates
       }
     }
 
     function downloadCSV() {
-      // Build CSV: hourly table rows then daily summary
       const rows = [];
-      // Hourly header
       const hourlyHeader = ["Time","Cloud Condition","Temperature (°C)","Humidity (%)","Wind","Chance of Rain (%)","Precipitation (mm)"];
       rows.push(hourlyHeader.join(","));
-      // Hourly rows
       document.querySelectorAll("#hourly-table tbody tr").forEach(tr => {
         const cols = Array.from(tr.querySelectorAll("td")).map(td => `"${td.innerText.replace(/"/g,'""')}"`);
         rows.push(cols.join(","));
       });
-      rows.push(""); // blank line
-
-      // Daily header
+      rows.push("");
       rows.push(["Date","Day","Avg Temp (°C)","Humidity (%)","Chance of Rain (%)"].join(","));
       lastDailySummary.forEach(d => {
         const cols = [
@@ -328,8 +353,27 @@
       URL.revokeObjectURL(url);
     }
 
-    function downloadPDF() {
-      // Capture the #report element which includes map, hourly table and cards
+    async function downloadPDF() {
+      const iframeContainer = document.getElementById('map');
+      const staticImg = document.getElementById('static-map');
+
+      if (!staticImg.src) {
+        const lat = document.getElementById('lat').value.trim();
+        const lon = document.getElementById('lon').value.trim();
+        if (lat && lon) staticImg.src = buildStaticMapURL(lat, lon, 1000, 500, 11);
+      }
+
+      const originalMapHTML = iframeContainer.innerHTML;
+      iframeContainer.style.display = 'none';
+      staticImg.style.display = 'block';
+
+      await new Promise(resolve => {
+        if (staticImg.complete && staticImg.naturalWidth !== 0) return resolve();
+        staticImg.onload = () => resolve();
+        staticImg.onerror = () => resolve();
+        setTimeout(resolve, 800);
+      });
+
       const element = document.getElementById("report");
       const opt = {
         margin: 0.5,
@@ -338,8 +382,17 @@
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
       };
-      // html2pdf will include the map iframe content if allowed by CORS; embedding Google Maps usually works visually.
-      html2pdf().set(opt).from(element).save();
+
+      try {
+        await html2pdf().set(opt).from(element).save();
+      } catch (err) {
+        console.error("PDF generation error:", err);
+        alert("There was an error generating the PDF. Check the console for details.");
+      } finally {
+        staticImg.style.display = 'none';
+        iframeContainer.style.display = 'block';
+        iframeContainer.innerHTML = originalMapHTML;
+      }
     }
   </script>
 </body>
