@@ -1,148 +1,344 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>PICOT Weather Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; background:#F5F5F5; margin:0; padding:0; color:#000; }
-    header { background:#2E3192; color:#fff; padding:20px; text-align:center; }
-    #logo { width:120px; margin-bottom:10px; }
-    h1 { margin:0; font-size:28px; }
-    main { padding:20px; text-align:center; }
-    input { padding:10px; margin:5px; width:160px; border:1px solid #ccc; border-radius:4px; }
-    button { padding:10px 20px; background:#00A651; color:#fff; border:none; border-radius:4px; cursor:pointer; margin:10px; }
-    button:hover { background:#ED1C24; }
-    iframe { margin-top:20px; border:none; border-radius:8px; }
-    table { margin:20px auto; border-collapse:collapse; width:95%; max-width:1000px; background:#fff; box-shadow:2px 2px 8px rgba(0,0,0,0.1); }
-    th, td { border:1px solid #ccc; padding:10px; text-align:center; }
-    th { background:#2E3192; color:#fff; }
-    tr:nth-child(even) { background:#f9f9f9; }
-    footer { background:#2E3192; color:#fff; text-align:center; padding:10px; margin-top:40px; }
+    :root{
+      --picot-blue:#2E3192;
+      --picot-green:#00A651;
+      --accent-hover:#ED1C24;
+      --card-hover:#00A651;
+      --bg:#F5F5F5;
+      --text:#111;
+    }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 0;
+      color: var(--text);
+    }
+    header {
+      background: var(--picot-blue);
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    #logo { width: 120px; display:block; margin: 0 auto 8px; }
+    h1 { margin: 0; font-size: 26px; }
+    main {
+      padding: 20px;
+      text-align: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .controls { margin-bottom: 12px; }
+    input[type="text"] {
+      padding: 10px;
+      margin: 6px 6px 6px 0;
+      width: 160px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 18px;
+      background: var(--picot-green);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 6px;
+      transition: background .18s ease, transform .12s ease;
+    }
+    button:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    #map { margin-top: 14px; border-radius: 8px; overflow: hidden; }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 95%;
+      max-width: 1000px;
+      background: #fff;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.06);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    th, td {
+      border-bottom: 1px solid #e6e6e6;
+      padding: 10px 12px;
+      text-align: center;
+      font-size: 14px;
+    }
+    th {
+      background: var(--picot-blue);
+      color: #fff;
+      font-weight: 600;
+    }
+    tr:nth-child(even) td { background: #fbfbfb; }
+    /* Cards */
+    #daily-cards {
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:12px;
+      margin: 12px auto 28px;
+      max-width: 1100px;
+    }
+    .card {
+      background:#fff;
+      border-radius:14px;
+      box-shadow: 2px 6px 18px rgba(0,0,0,0.08);
+      margin: 6px;
+      padding: 14px;
+      width: 160px;
+      min-height: 170px;
+      transition: background .28s ease, transform .18s ease, color .18s ease;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      text-align:center;
+      cursor:default;
+    }
+    .card .icon { font-size:36px; margin-bottom:8px; }
+    .card h4 { margin:6px 0 4px; font-size:16px; color:var(--picot-blue); }
+    .card p { margin:4px 0; font-size:13px; color:#333; }
+    .card:hover {
+      background: var(--card-hover);
+      color: #fff;
+      transform: translateY(-6px) scale(1.03);
+    }
+    .card:hover h4 { color: #fff; }
+    .small-note { font-size:13px; color:#666; margin-top:6px; }
+    footer {
+      background: var(--picot-blue);
+      color: #fff;
+      text-align:center;
+      padding: 12px;
+      margin-top: 28px;
+    }
+    /* Responsive */
+    @media (max-width:640px){
+      input[type="text"]{ width: 140px; }
+      .card { width: 140px; min-height:150px; }
+      th, td { font-size:13px; padding:8px; }
+    }
   </style>
-  <!-- PDF export library -->
+
+  <!-- html2pdf for PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <header>
-    <img id="logo" src="picot-logo.png" alt="PICOT Logo">
+    <img id="logo" src="picot-logo.png" alt="PICOT Logo" />
     <h1>PICOT Weather Tracker</h1>
-    <p>Partners in Development and Center for Holistic Transformation</p>
+    <div class="small-note">Partners in Development and Center for Holistic Transformation</div>
   </header>
 
   <main id="report">
-    <p>Enter GPS Coordinates:</p>
-    <input type="text" id="lat" placeholder="Latitude">
-    <input type="text" id="lon" placeholder="Longitude"><br>
-    <button onclick="getWeather()">Get Forecast</button>
-    <div id="map"></div>
+    <div class="controls" aria-hidden="false">
+      <label for="lat" style="display:none">Latitude</label>
+      <input type="text" id="lat" placeholder="Latitude (e.g., 3.41666670)" />
+      <label for="lon" style="display:none">Longitude</label>
+      <input type="text" id="lon" placeholder="Longitude (e.g., 30.91105)" />
+      <button id="getBtn" onclick="getWeather()">Get Forecast</button>
+      <button onclick="downloadCSV()">Download as CSV</button>
+      <button onclick="downloadPDF()">Download as PDF</button>
+    </div>
 
-    <h2>3-Hourly Forecast (Next 5 Entries)</h2>
-    <table id="hourly-table">
+    <div id="map" aria-hidden="false"></div>
+
+    <h2 style="margin-top:18px">3-Hourly Forecast (Next 5 Entries)</h2>
+    <table id="hourly-table" role="table" aria-label="3-hourly forecast">
       <thead>
         <tr>
-          <th>Time</th><th>Cloud Condition</th><th>Temperature (°C)</th>
-          <th>Humidity (%)</th><th>Wind</th><th>Chance of Rain (%)</th><th>Precipitation (mm)</th>
+          <th>Time</th>
+          <th>Cloud Condition</th>
+          <th>Temperature (°C)</th>
+          <th>Humidity (%)</th>
+          <th>Wind</th>
+          <th>Chance of Rain (%)</th>
+          <th>Precipitation (mm)</th>
         </tr>
       </thead>
       <tbody id="forecast-table"></tbody>
     </table>
 
-    <h2>5-Day Forecast (Daily Summary)</h2>
-    <table id="daily-summary-table">
-      <thead>
-        <tr>
-          <th>Date</th><th>Day</th><th>Avg Temp (°C)</th><th>Humidity (%)</th><th>Chance of Rain (%)</th>
-        </tr>
-      </thead>
-      <tbody id="daily-table"></tbody>
-    </table>
+    <h2 style="margin-top:18px">5-Day Forecast (Daily Summary)</h2>
+    <div id="daily-cards" aria-live="polite"></div>
 
-    <button onclick="downloadCSV()">Download as CSV</button>
-    <button onclick="downloadPDF()">Download as PDF</button>
+    <div class="small-note">Tip: hover a card to highlight it for presentations.</div>
   </main>
 
   <footer>&copy; 2026 PICOT | Weather Tracker App</footer>
 
   <script>
+    // Global store for daily summary so CSV can include it
+    let lastDailySummary = [];
+
     function getWindDirection(deg) {
+      if (deg === undefined || deg === null || isNaN(deg)) return "";
       const dirs = ["N","NE","E","SE","S","SW","W","NW"];
-      return dirs[Math.round(deg/45)%8];
+      return dirs[Math.round(deg/45) % 8];
     }
 
     async function getWeather() {
       const lat = document.getElementById('lat').value.trim();
       const lon = document.getElementById('lon').value.trim();
-      if(!lat||!lon){ alert("Please enter both latitude and longitude."); return; }
+      if (!lat || !lon) {
+        alert("Please enter both latitude and longitude.");
+        return;
+      }
 
-      const apiKey = "f430701439c4ab9d557d047cea0d6df6"; // your valid API key
-      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+      const apiKey = "f430701439c4ab9d557d047cea0d6df6"; // confirmed API key
+      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&appid=${apiKey}&units=metric`;
 
-      document.getElementById('map').innerHTML = `<iframe width="100%" height="300" src="https://www.google.com/maps?q=${lat},${lon}&output=embed"></iframe>`;
+      // show map (embedded)
+      document.getElementById('map').innerHTML = `<iframe width="100%" height="300" src="https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lon)}&output=embed" style="border:0"></iframe>`;
+
+      // clear previous
+      document.getElementById('forecast-table').innerHTML = "";
+      document.getElementById('daily-cards').innerHTML = "";
+      lastDailySummary = [];
 
       try {
-        const response = await fetch(url);
-        if(!response.ok) throw new Error("API error "+response.status);
-        const data = await response.json();
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('API error ' + resp.status);
+        const data = await resp.json();
 
-        // 3-hourly forecast
-        const table = document.getElementById('forecast-table'); table.innerHTML="";
-        data.list.slice(0,5).forEach(item=>{
-          const rainChance = Math.round((item.pop||0)*100)+"%";
-          const precipitation = item.rain && item.rain["3h"] ? item.rain["3h"] : 0;
-          const wind = `${item.wind.speed} m/s ${getWindDirection(item.wind.deg)}`;
-          table.innerHTML += `<tr>
-            <td>${item.dt_txt}</td><td>${item.weather[0].description}</td>
-            <td>${item.main.temp}</td><td>${item.main.humidity}</td>
-            <td>${wind}</td><td>${rainChance}</td><td>${precipitation}</td>
-          </tr>`;
+        // --- 3-hourly (next 5 entries) ---
+        const hourlyTbody = document.getElementById('forecast-table');
+        const hourlyEntries = (data.list || []).slice(0, 5);
+        if (hourlyEntries.length === 0) {
+          hourlyTbody.innerHTML = "<tr><td colspan='7'>No hourly data available</td></tr>";
+        } else {
+          hourlyEntries.forEach(item => {
+            const rainChance = Math.round((item.pop || 0) * 100) + "%";
+            const precipitation = item.rain && item.rain["3h"] ? item.rain["3h"] : 0;
+            const windDir = getWindDirection(item.wind && item.wind.deg);
+            const wind = `${item.wind && item.wind.speed ? item.wind.speed : 0} m/s ${windDir}`;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${item.dt_txt}</td>
+              <td>${item.weather && item.weather[0] ? item.weather[0].description : ''}</td>
+              <td>${item.main && item.main.temp != null ? item.main.temp : ''}</td>
+              <td>${item.main && item.main.humidity != null ? item.main.humidity : ''}</td>
+              <td>${wind}</td>
+              <td>${rainChance}</td>
+              <td>${precipitation}</td>
+            `;
+            hourlyTbody.appendChild(row);
+          });
+        }
+
+        // --- 5-day summary as cards ---
+        const days = {};
+        (data.list || []).forEach(item => {
+          const date = item.dt_txt.split(' ')[0];
+          if (!days[date]) days[date] = { temps: [], humidity: [], pop: [], weather: [] };
+          if (item.main && item.main.temp != null) days[date].temps.push(item.main.temp);
+          if (item.main && item.main.humidity != null) days[date].humidity.push(item.main.humidity);
+          days[date].pop.push(item.pop || 0);
+          if (item.weather && item.weather[0] && item.weather[0].main) days[date].weather.push(item.weather[0].main);
         });
 
-        // 5-day summary
-        const dailyTable = document.getElementById('daily-table'); dailyTable.innerHTML="";
-        const days={};
-        data.list.forEach(item=>{
-          const date=item.dt_txt.split(" ")[0];
-          if(!days[date]) days[date]={temps:[],humidity:[],pop:[]};
-          days[date].temps.push(item.main.temp);
-          days[date].humidity.push(item.main.humidity);
-          days[date].pop.push(item.pop||0);
-        });
-        Object.keys(days).slice(0,5).forEach(date=>{
-          const avgTemp=Math.round(days[date].temps.reduce((a,b)=>a+b,0)/days[date].temps.length);
-          const avgHumidity=Math.round(days[date].humidity.reduce((a,b)=>a+b,0)/days[date].humidity.length);
-          const avgPop=Math.round((days[date].pop.reduce((a,b)=>a+b,0)/days[date].pop.length)*100);
-          const dayName=new Date(date).toLocaleDateString('en-US',{weekday:'long'});
-          dailyTable.innerHTML += `<tr>
-            <td>${date}</td><td>${dayName}</td><td>${avgTemp}</td><td>${avgHumidity}</td><td>${avgPop}%</td>
-          </tr>`;
-        });
+        const dailyKeys = Object.keys(days).slice(0, 5);
+        const dailyCards = document.getElementById('daily-cards');
 
-      } catch(err) {
+        if (dailyKeys.length === 0) {
+          dailyCards.innerHTML = "<p>No daily summary available</p>";
+        } else {
+          dailyKeys.forEach(date => {
+            const d = days[date];
+            const avgTemp = d.temps.length ? Math.round(d.temps.reduce((a,b)=>a+b,0)/d.temps.length) : '';
+            const avgHumidity = d.humidity.length ? Math.round(d.humidity.reduce((a,b)=>a+b,0)/d.humidity.length) : '';
+            const avgPop = d.pop.length ? Math.round((d.pop.reduce((a,b)=>a+b,0)/d.pop.length)*100) : 0;
+            const dayName = new Date(date).toLocaleDateString('en-US',{weekday:'long'});
+            // choose icon by most common weather in that day
+            const freq = {};
+            d.weather.forEach(w => { freq[w] = (freq[w]||0)+1; });
+            const most = Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0] || '';
+            let icon = "☀️";
+            if (most.includes("Cloud")) icon = "☁️";
+            if (most.includes("Rain")) icon = "🌧️";
+            if (most.includes("Storm") || most.includes("Thunder")) icon = "⛈️";
+            if (most.includes("Snow")) icon = "❄️";
+
+            // store for CSV export
+            lastDailySummary.push({ date, dayName, avgTemp, avgHumidity, avgPop });
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+              <div class="icon">${icon}</div>
+              <h4>${dayName}</h4>
+              <p style="font-weight:600">${date}</p>
+              <p>Temp: ${avgTemp !== '' ? avgTemp + '°C' : 'N/A'}</p>
+              <p>Humidity: ${avgHumidity !== '' ? avgHumidity + '%' : 'N/A'}</p>
+              <p>Rain: ${avgPop}%</p>
+            `;
+            dailyCards.appendChild(card);
+          });
+        }
+
+      } catch (err) {
         console.error(err);
-        document.getElementById('forecast-table').innerHTML="<tr><td colspan='7'>Error fetching forecast</td></tr>";
-        document.getElementById('daily-table').innerHTML="<tr><td colspan='5'>Error fetching forecast</td></tr>";
+        document.getElementById('forecast-table').innerHTML = "<tr><td colspan='7'>Error fetching forecast</td></tr>";
+        document.getElementById('daily-cards').innerHTML = "<p>Error fetching forecast</p>";
+        // keep map visible so user can verify coordinates
       }
     }
 
-    function downloadCSV(){
-      let csv=[];
-      [document.getElementById("hourly-table"),document.getElementById("daily-summary-table")].forEach(table=>{
-        table.querySelectorAll("tr").forEach(row=>{
-          const cols=row.querySelectorAll("th,td");
-          csv.push(Array.from(cols).map(c=>c.innerText).join(","));
-        });
-        csv.push("");
+    function downloadCSV() {
+      // Build CSV: hourly table rows then daily summary
+      const rows = [];
+      // Hourly header
+      const hourlyHeader = ["Time","Cloud Condition","Temperature (°C)","Humidity (%)","Wind","Chance of Rain (%)","Precipitation (mm)"];
+      rows.push(hourlyHeader.join(","));
+      // Hourly rows
+      document.querySelectorAll("#hourly-table tbody tr").forEach(tr => {
+        const cols = Array.from(tr.querySelectorAll("td")).map(td => `"${td.innerText.replace(/"/g,'""')}"`);
+        rows.push(cols.join(","));
       });
-      const blob=new Blob([csv.join("\n")],{type:"text/csv"});
-      const link=document.createElement("a");
-      link.href=URL.createObjectURL(blob);
-      link.download="PICOT_Forecast.csv";
+      rows.push(""); // blank line
+
+      // Daily header
+      rows.push(["Date","Day","Avg Temp (°C)","Humidity (%)","Chance of Rain (%)"].join(","));
+      lastDailySummary.forEach(d => {
+        const cols = [
+          `"${d.date}"`,
+          `"${d.dayName}"`,
+          `"${d.avgTemp}"`,
+          `"${d.avgHumidity}"`,
+          `"${d.avgPop}%"`
+        ];
+        rows.push(cols.join(","));
+      });
+
+      const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.setAttribute("download", "PICOT_Forecast.csv");
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
 
-    function downloadPDF(){
-      const element=document.getElementById("report");
-      const opt={margin:0.5,filename:'PICOT_Forecast.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'in',format:'a4',orientation:'portrait'}};
+    function downloadPDF() {
+      // Capture the #report element which includes map, hourly table and cards
+      const element = document.getElementById("report");
+      const opt = {
+        margin: 0.5,
+        filename: 'PICOT_Forecast.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      // html2pdf will include the map iframe content if allowed by CORS; embedding Google Maps usually works visually.
       html2pdf().set(opt).from(element).save();
     }
   </script>
