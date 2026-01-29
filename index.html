@@ -43,6 +43,7 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      margin: 10px;
     }
     button:hover {
       background-color: #ED1C24;
@@ -80,6 +81,8 @@
       margin-top: 40px;
     }
   </style>
+  <!-- PDF export library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <header>
@@ -88,7 +91,7 @@
     <p>Partners in Development and Center for Holistic Transformation</p>
   </header>
 
-  <main>
+  <main id="report">
     <p>Enter GPS Coordinates:</p>
     <input type="text" id="lat" placeholder="Latitude">
     <input type="text" id="lon" placeholder="Longitude">
@@ -96,8 +99,8 @@
     <button onclick="getWeather()">Get Forecast</button>
     <div id="map"></div>
 
-    <h2>5-Day Forecast (3-Hourly Intervals)</h2>
-    <table>
+    <h2>3-Hourly Forecast (Next 5 Entries)</h2>
+    <table id="hourly-table">
       <thead>
         <tr>
           <th>Time</th>
@@ -111,6 +114,116 @@
       </thead>
       <tbody id="forecast-table"></tbody>
     </table>
+
+    <h2>5-Day Forecast (Daily Summary)</h2>
+    <table id="daily-summary-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Day</th>
+          <th>Avg Temp (°C)</th>
+          <th>Humidity (%)</th>
+          <th>Chance of Rain (%)</th>
+        </tr>
+      </thead>
+      <tbody id="daily-table"></tbody>
+    </table>
+
+    <button onclick="downloadCSV()">Download as CSV</button>
+    <button onclick="downloadPDF()">Download as PDF</button>
   </main>
 
   <footer>
+    &copy; 2026 PICOT | Weather Tracker App
+  </footer>
+
+  <script>
+    function getWindDirection(deg) {
+      const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+      return directions[Math.round(deg / 45) % 8];
+    }
+
+    async function getWeather() {
+      const lat = document.getElementById('lat').value;
+      const lon = document.getElementById('lon').value;
+      const apiKey = "f430701439c4ab9d557d047cea0d6df6";
+      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+      document.getElementById('map').innerHTML = `<iframe width="100%" height="300" src="https://www.google.com/maps?q=${lat},${lon}&output=embed"></iframe>`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        // 3-hourly forecast (next 5 entries)
+        const table = document.getElementById('forecast-table');
+        table.innerHTML = "";
+        data.list.slice(0, 5).forEach(item => {
+          const rainChance = Math.round((item.pop || 0) * 100) + "%";
+          const precipitation = item.rain && item.rain["3h"] ? item.rain["3h"] : 0;
+          const wind = `${item.wind.speed} m/s ${getWindDirection(item.wind.deg)}`;
+          const row = `<tr>
+            <td>${item.dt_txt}</td>
+            <td>${item.weather[0].description}</td>
+            <td>${item.main.temp}</td>
+            <td>${item.main.humidity}</td>
+            <td>${wind}</td>
+            <td>${rainChance}</td>
+            <td>${precipitation}</td>
+          </tr>`;
+          table.innerHTML += row;
+        });
+
+        // 5-day daily summary
+        const dailyTable = document.getElementById('daily-table');
+        dailyTable.innerHTML = "";
+        const days = {};
+        data.list.forEach(item => {
+          const date = item.dt_txt.split(" ")[0];
+          if (!days[date]) {
+            days[date] = { temps: [], humidity: [], pop: [] };
+          }
+          days[date].temps.push(item.main.temp);
+          days[date].humidity.push(item.main.humidity);
+          days[date].pop.push(item.pop || 0);
+        });
+
+        Object.keys(days).slice(0, 5).forEach(date => {
+          const avgTemp = Math.round(days[date].temps.reduce((a,b)=>a+b,0)/days[date].temps.length);
+          const avgHumidity = Math.round(days[date].humidity.reduce((a,b)=>a+b,0)/days[date].humidity.length);
+          const avgPop = Math.round((days[date].pop.reduce((a,b)=>a+b,0)/days[date].pop.length)*100);
+          const dayName = new Date(date).toLocaleDateString('en-US',{weekday:'long'});
+          const row = `<tr>
+            <td>${date}</td>
+            <td>${dayName}</td>
+            <td>${avgTemp}</td>
+            <td>${avgHumidity}</td>
+            <td>${avgPop}%</td>
+          </tr>`;
+          dailyTable.innerHTML += row;
+        });
+
+      } catch {
+        document.getElementById('forecast-table').innerHTML = "<tr><td colspan='7'>Error fetching forecast</td></tr>";
+        document.getElementById('daily-table').innerHTML = "<tr><td colspan='5'>Error fetching forecast</td></tr>";
+      }
+    }
+
+    function downloadCSV() {
+      let csv = [];
+      const tables = [document.getElementById("hourly-table"), document.getElementById("daily-summary-table")];
+      tables.forEach(table => {
+        const rows = table.querySelectorAll("tr");
+        rows.forEach(row => {
+          const cols = row.querySelectorAll("th, td");
+          const rowData = [];
+          cols.forEach(col => rowData.push(col.innerText));
+          csv.push(rowData.join(","));
+        });
+        csv.push(""); // blank line between tables
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csvContent));
+      link.setAttribute("download", "PICOT_Forecast.csv");
