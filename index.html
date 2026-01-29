@@ -13,66 +13,73 @@
       --bg:#F5F5F5;
       --text:#111;
     }
+    html,body{height:100%;}
     body {
       font-family: Arial, Helvetica, sans-serif;
       background: var(--bg);
       margin: 0;
       padding: 0;
       color: var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
+
+    /* Header */
     header {
       background: var(--picot-blue);
       color: #fff;
-      padding: 20px;
+      padding: 22px 16px;
       text-align: center;
     }
-    #logo { width: 120px; display:block; margin: 0 auto 8px; }
-    h1 { margin: 0; font-size: 26px; }
+    #logo { width: 200px; display:block; margin: 0 auto 10px; } /* enlarged logo */
+    h1 { margin: 0; font-size: 28px; line-height:1.1; }
     .org-name {
-      margin-top: 6px;
+      margin-top: 8px;
       font-weight: 800;
       color: #fff;
       font-size: 15px;
       letter-spacing: 0.2px;
     }
 
+    /* Main container */
     main {
       padding: 20px;
       text-align: center;
       max-width: 1100px;
-      margin: 0 auto;
+      margin: 0 auto 40px;
     }
 
-    /* --- Instruction label (bold) and centered block with left-aligned inputs --- */
+    /* Instruction label (bold) */
     .label-top {
       width:100%;
       max-width:1100px;
-      margin: 6px auto 8px;
+      margin: 6px auto 12px;
       font-size:15px;
       color:#333;
-      text-align:left;           /* left aligned text */
-      font-weight:700;          /* bold */
+      text-align:left;
+      font-weight:700;
       padding: 0 6px;
     }
 
+    /* Controls: centered block with left-aligned inputs */
     .controls {
       display:flex;
-      justify-content:center;   /* center the whole controls block */
+      justify-content:center;
       gap:18px;
       align-items:flex-start;
       margin-bottom:12px;
       flex-wrap:wrap;
     }
 
-    /* This container is centered by .controls but its contents are left-aligned */
     .controls-left {
       display:flex;
-      flex-direction:column;    /* stack label + inputs vertically */
-      align-items:flex-start;   /* left-align inputs inside this block */
+      flex-direction:column;
+      align-items:flex-start;
       background:#fff;
-      padding:10px 12px;
+      padding:12px;
       border-radius:8px;
       box-shadow: 1px 2px 6px rgba(0,0,0,0.04);
+      min-width:260px;
     }
 
     .controls-left .field-label {
@@ -84,17 +91,18 @@
 
     input[type="text"] {
       padding: 10px;
-      margin: 6px 0;
-      width: 220px;
+      margin: 6px 0 10px 0;
+      width: 240px;
       border: 1px solid #ccc;
       border-radius: 6px;
       box-sizing: border-box;
+      font-size:14px;
     }
 
     .controls-right {
       display:flex;
       flex-direction:column;
-      gap:8px;
+      gap:10px;
       align-items:center;
       justify-content:center;
     }
@@ -108,12 +116,15 @@
       cursor: pointer;
       transition: background .18s ease, transform .12s ease;
       min-width:160px;
+      font-weight:600;
     }
     button:hover { background: var(--accent-hover); transform: translateY(-1px); }
 
+    /* Map */
     #map { margin-top: 14px; border-radius: 8px; overflow: hidden; }
     #static-map { display:none; width:100%; height:auto; border-radius:8px; }
 
+    /* Table */
     table {
       margin: 20px auto;
       border-collapse: collapse;
@@ -137,6 +148,7 @@
     }
     tr:nth-child(even) td { background: #fbfbfb; }
 
+    /* Cards */
     #daily-cards {
       display:flex;
       flex-wrap:wrap;
@@ -153,7 +165,7 @@
       padding: 14px;
       width: 160px;
       min-height: 170px;
-      transition: background .28s ease, transform .18s ease, color .18s ease;
+      transition: background .22s ease, transform .14s ease, color .14s ease;
       display:flex;
       flex-direction:column;
       align-items:center;
@@ -167,10 +179,11 @@
     .card:hover {
       background: var(--card-hover);
       color: #fff;
-      transform: translateY(-6px) scale(1.03);
+      transform: translateY(-4px) scale(1.02);
     }
     .card:hover h4 { color: #fff; }
 
+    /* Footer */
     footer {
       background: var(--picot-blue);
       color: #fff;
@@ -179,11 +192,16 @@
       margin-top: 28px;
     }
 
+    /* Focus styles for accessibility */
+    input:focus, button:focus { outline: 3px solid rgba(46,49,146,0.14); outline-offset: 2px; }
+
+    /* Responsive */
     @media (max-width:760px){
       .controls { flex-direction:column; align-items:center; gap:12px; }
       .controls-left { width: 92%; }
       input[type="text"]{ width: 100%; }
-      .controls-right { flex-direction:row; gap:8px; flex-wrap:wrap; }
+      .controls-right { flex-direction:row; gap:8px; flex-wrap:wrap; justify-content:center; }
+      #logo { width:160px; }
     }
   </style>
 
@@ -197,11 +215,9 @@
   </header>
 
   <main id="report">
-    <!-- Bold label, left aligned -->
     <div class="label-top">Enter coordinates</div>
 
-    <!-- Centered controls block; inputs left-aligned inside .controls-left -->
-    <div class="controls">
+    <div class="controls" role="region" aria-label="Coordinate controls">
       <div class="controls-left" aria-label="Coordinate inputs">
         <div class="field-label">Latitude</div>
         <input type="text" id="lat" placeholder="Latitude (e.g., 3.41666670)" />
@@ -266,13 +282,16 @@
       const apiKey = "f430701439c4ab9d557d047cea0d6df6";
       const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&appid=${apiKey}&units=metric`;
 
+      // interactive iframe for the page
       document.getElementById('map').innerHTML = `<iframe width="100%" height="300" src="https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lon)}&output=embed" style="border:0"></iframe>`;
 
-      const staticUrl = buildStaticMapURL(lat, lon, 1000, 500, 11);
+      // static map for PDF capture
+      const staticUrl = buildStaticMapURL(lat, lon, Math.min(window.innerWidth, 1000), 500, 11);
       const staticImg = document.getElementById('static-map');
       staticImg.src = staticUrl;
       staticImg.alt = `Map centered at ${lat}, ${lon}`;
 
+      // clear previous
       document.getElementById('forecast-table').innerHTML = "";
       document.getElementById('daily-cards').innerHTML = "";
       lastDailySummary = [];
@@ -282,6 +301,7 @@
         if (!resp.ok) throw new Error('API error ' + resp.status);
         const data = await resp.json();
 
+        // 3-hourly forecast (next 5)
         const hourlyTbody = document.getElementById('forecast-table');
         const hourlyEntries = (data.list || []).slice(0, 5);
         if (hourlyEntries.length === 0) {
@@ -306,6 +326,7 @@
           });
         }
 
+        // 5-day summary as cards
         const days = {};
         (data.list || []).forEach(item => {
           const date = item.dt_txt.split(' ')[0];
@@ -399,7 +420,7 @@
       if (!staticImg.src) {
         const lat = document.getElementById('lat').value.trim();
         const lon = document.getElementById('lon').value.trim();
-        if (lat && lon) staticImg.src = buildStaticMapURL(lat, lon, 1000, 500, 11);
+        if (lat && lon) staticImg.src = buildStaticMapURL(lat, lon, Math.min(window.innerWidth, 1000), 500, 11);
       }
 
       const originalMapHTML = iframeContainer.innerHTML;
