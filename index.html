@@ -49,19 +49,19 @@
       margin: 0 auto 40px;
     }
 
-    /* Instruction label (bold) */
+    /* Instruction label (centered above controls) */
     .label-top {
       width:100%;
       max-width:1100px;
       margin: 6px auto 12px;
-      font-size:15px;
+      font-size:16px;
       color:#333;
-      text-align:left;
+      text-align:center;       /* centered */
       font-weight:700;
       padding: 0 6px;
     }
 
-    /* Controls: centered block with left-aligned inputs */
+    /* Controls: centered block with left-aligned inputs and buttons in a row */
     .controls {
       display:flex;
       justify-content:center;
@@ -99,12 +99,14 @@
       font-size:14px;
     }
 
+    /* Buttons container: horizontal row with spacing */
     .controls-right {
       display:flex;
-      flex-direction:column;
-      gap:10px;
+      flex-direction:row; /* row */
+      gap:12px;           /* spacing between buttons */
       align-items:center;
       justify-content:center;
+      flex-wrap:wrap;
     }
 
     button {
@@ -215,8 +217,10 @@
   </header>
 
   <main id="report">
+    <!-- Centered label above controls -->
     <div class="label-top">Enter coordinates</div>
 
+    <!-- Controls: inputs left-aligned inside a centered block; buttons in a single row -->
     <div class="controls" role="region" aria-label="Coordinate controls">
       <div class="controls-left" aria-label="Coordinate inputs">
         <div class="field-label">Latitude</div>
